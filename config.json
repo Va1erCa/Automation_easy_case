@@ -6,17 +6,34 @@
         "user": "postgres",
         "password": "123456"
     },
+    "logging_generating": {
+        "name": "sales_gen",
+        "level": "INFO",
+        "to_file" : true,
+        "logs_folder_path": ".log",
+        "file_name_prefix": "gen_log_",
+        "max_num_log_files": 30
+    },
+    "logging_uploading": {
+        "name": "sales_up",
+        "level" : "INFO",
+        "to_file" : true,
+        "logs_folder_path": ".log",
+        "file_name_prefix": "up_log_",
+        "max_num_log_files": 30
+    },
     "store_chain": {
         "stores": {
-            "cash_registers" : [5, 5, 7, 7, 10],
-            "ranks" : [60, 80, 100, 90, 70],
-            "opening_hours" : [[9, 20], [9, 20], [9, 22], [9, 22], [9, 22]]
+            "cash_registers": [5, 5, 7, 7, 10],
+            "ranks": [60, 80, 100, 90, 70],
+            "opening_hours": [[9, 20], [9, 20], [9, 22], [9, 22], [9, 22]]
         },
         "goods": {
             "categories": ["бытовая химия", "домашний интерьер", "мебель", "освещение", "текстиль",
                             "посуда", "кухонные принадлежности", "хозяйственные товары"],
             "name_prefix": ["быт_хим_", "дом_инт_", "меб_", "свет_", "текс_", "пос_", "кух_пр_", "хоз_тов_"],
-            "category_capacity" : [100, 100, 500, 150, 300, 200, 400, 150, 450]
+            "category_capacity": [100, 100, 500, 150, 300, 200, 400, 150, 450]
         }
-    }
+    },
+    "sales_storing_path":  "data"
 }
