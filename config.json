@@ -33,7 +33,10 @@
                             "посуда", "кухонные принадлежности", "хозяйственные товары"],
             "name_prefix": ["быт_хим_", "дом_инт_", "меб_", "свет_", "текс_", "пос_", "кух_пр_", "хоз_тов_"],
             "category_capacity": [100, 100, 500, 150, 300, 200, 400, 150, 450]
-        }
+        },
+        "range_of_chain_daily_load": [0.2, 0.5],
+        "range_of_cash_regs_load" : [0.6, 1.0],
+        "min_sec_per_cash_transaction": 120
     },
     "sales_storing_path":  "data"
 }

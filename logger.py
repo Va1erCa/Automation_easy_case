@@ -60,7 +60,7 @@ def _init_logging(log_set: LogSettings) -> str :
 
 
 # def set_logger(level: int = logging.DEBUG, to_file: bool = True) -> logging.Logger:
-def set_logger(log_set: LogSettings) -> logging.Logger :
+async def set_logger(log_set: LogSettings) -> logging.Logger :
     # creating logger
     logger = logging.getLogger(log_set.name)
     logger.setLevel(log_set.level)

@@ -42,6 +42,9 @@ class GoodsSettings(BaseModel) :
 class StoreChainSettings(BaseModel) :
     stores: StoreSettings = Field(description='settings of the stores')
     goods: GoodsSettings = Field(description='product settings')
+    range_of_chain_daily_load: list[float] = Field(description='the range of loads on the retail network of stores')
+    range_of_cash_regs_load: list[float] = Field(description='the range of cashier loads')
+    min_sec_per_cash_transaction: int = Field(default=120, description='minimum time per cash transaction')
 
 class AppSettings(BaseModel):
     database_connection: DBConnectionSettings = Field(description='data base connection settings')
@@ -58,4 +61,5 @@ _settings_json_string = Path(PurePath.joinpath(dir_name, 'config.json')).read_te
 settings = AppSettings.model_validate_json(_settings_json_string)
 
 if __name__ == "__main__":
+    print(_settings_json_string)
     print(settings.model_dump())
