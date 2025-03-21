@@ -8,7 +8,7 @@
     },
     "logging_generating": {
         "name": "sales_gen",
-        "level": "INFO",
+        "level": "DEBUG",
         "to_file" : true,
         "logs_folder_path": ".log",
         "file_name_prefix": "gen_log_",
@@ -16,7 +16,7 @@
     },
     "logging_uploading": {
         "name": "sales_up",
-        "level" : "INFO",
+        "level" : "DEBUG",
         "to_file" : true,
         "logs_folder_path": ".log",
         "file_name_prefix": "up_log_",
@@ -35,8 +35,8 @@
             "category_capacity": [100, 100, 500, 150, 300, 200, 400, 150, 450]
         },
         "range_of_chain_daily_load": [0.2, 0.5],
-        "range_of_cash_regs_load" : [0.6, 1.0],
-        "min_sec_per_cash_transaction": 120
+        "range_of_cash_regs_daily_load" : [0.6, 1.0],
+        "min_sec_per_cash_transaction": 90
     },
     "sales_storing_path":  "data"
 }

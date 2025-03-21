@@ -10,9 +10,9 @@ from pathlib import Path, PurePath, WindowsPath
 from config_py import settings, dir_name, LogSettings
 
 
-# logger: logging.Logger | None = None    # Global variable for save only one instance of the logger
-#                                         # the command for use the logger in another module:
-#                                         #   <from logger import logger>
+logger: logging.Logger | None = None    # Global variable for save only one instance of the logger
+                                        # the command for use the logger in another module:
+                                        #   <from logger import logger>
 
 format_line = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
@@ -60,26 +60,27 @@ def _init_logging(log_set: LogSettings) -> str :
 
 
 # def set_logger(level: int = logging.DEBUG, to_file: bool = True) -> logging.Logger:
-async def set_logger(log_set: LogSettings) -> logging.Logger :
-    # creating logger
-    logger = logging.getLogger(log_set.name)
-    logger.setLevel(log_set.level)
+def set_logger(log_set: LogSettings) -> logging.Logger :
+    global logger
+    # Only one, the first launch
+    if logger is None:
+        logger = logging.getLogger(log_set.name)
+        logger.setLevel(log_set.level)
 
-    # configuring logger output to the console
-    handler = logging.StreamHandler()
-    formatter = ColoredFormatter()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    if log_set.to_file :
-        # adding configuring logger output to the file (if specified)
-        handler = logging.FileHandler(_init_logging(log_set), encoding='utf-16')
-        formatter = logging.Formatter(format_line)
+        # configuring logger output to the console
+        handler = logging.StreamHandler()
+        formatter = ColoredFormatter()
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-    return logger
+        if log_set.to_file :
+            # adding configuring logger output to the file (if specified)
+            handler = logging.FileHandler(_init_logging(log_set), encoding='utf-16')
+            formatter = logging.Formatter(format_line)
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
 
+    return logger
 
 # set_logger(level=settings.logging.level_logging, to_file=settings.logging.to_file)
 # logger.debug('Loading <config_py> module')

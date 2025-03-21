@@ -43,7 +43,7 @@ class StoreChainSettings(BaseModel) :
     stores: StoreSettings = Field(description='settings of the stores')
     goods: GoodsSettings = Field(description='product settings')
     range_of_chain_daily_load: list[float] = Field(description='the range of loads on the retail network of stores')
-    range_of_cash_regs_load: list[float] = Field(description='the range of cashier loads')
+    range_of_cash_regs_daily_load: list[float] = Field(description='the range of cashier loads')
     min_sec_per_cash_transaction: int = Field(default=120, description='minimum time per cash transaction')
 
 class AppSettings(BaseModel):
