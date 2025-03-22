@@ -34,10 +34,21 @@ class StoreSettings(BaseModel) :
     ranks: list[int] = Field(description='the store`s rating by popularity among customers in the store chain')
     opening_hours: list[list[int]] = Field(description='opening hours of each store in the chain of stores')
 
+class PriceDistributionsSettings(BaseModel) :
+    range_prices: list[int] = Field(description='minimum and maximum prices in chain stores')
+    mean_price: int = Field(default=1500, description='average price in chain stores')
+
+class DiscountsSettings(BaseModel) :
+    min_discount_price: int = Field(default=500, description='the minimum price value when the discount can be applied')
+    discounts_values: list[int] = Field(description='available values of discounts')
+    discounts_probs: list[float] = Field(description='values of the probabilities of occurrence of each discount')
+
 class GoodsSettings(BaseModel) :
     categories: list[str] = Field(description='the number of cash registers for each store in the chain of stores')
     name_prefix: list[str] = Field(description='the store`s rating by popularity among customers in the store chain')
     category_capacity: list[int] = Field(description='opening hours of each store in the chain of stores')
+    price_distribution: PriceDistributionsSettings =  Field(description='settings of the goods prices')
+    discounts: DiscountsSettings = Field(description='settings of the discounts')
 
 class StoreChainSettings(BaseModel) :
     stores: StoreSettings = Field(description='settings of the stores')

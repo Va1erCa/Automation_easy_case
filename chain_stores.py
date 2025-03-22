@@ -3,6 +3,7 @@ import numpy as np
 import random
 import asyncio
 from datetime import datetime
+from dataclasses import dataclass
 from string import ascii_uppercase, ascii_lowercase
 
 from config_py import settings, StoreChainSettings, dir_name
@@ -16,12 +17,93 @@ import logger as log
 # random.seed(42)
 # np.random.seed(42)
 
+RANGE_CATEGORIES = (0, len(settings.store_chain.goods.categories))
+
+# The total number of all products of all categories
+GOODS_CAPACITY = sum(settings.store_chain.goods.category_capacity) + RANGE_CATEGORIES[1]
+
+
+# The data structure for storing the "skeleton" of the product
+@dataclass(slots=True, frozen=True)
+class Item :
+    category_key: int
+    item_key: int
+    price: int
+    discount: float
+#
+# class Item :
+#     def __init__(self, category_key: int, item_key: int, price: int, discount: int) :
+#         self._category_key: int = category_key
+#         self._item_key: int = item_key
+#         self._price: int = price
+#         self._discount: int = discount
+
+def get_prices(sample_size: int) :
+    min_p, max_p = settings.store_chain.goods.price_distribution.range_prices
+    mean_p = settings.store_chain.goods.price_distribution.mean_price
+
+    # Generating a lognormal distribution
+    data = np.random.lognormal(
+        mean=np.log(mean_p),
+        sigma=(1.38-0.6*(mean_p/max_p/0.05)),   # the empirical formula
+        size=GOODS_CAPACITY*10
+    ).round(-1)
+
+    # Bringing it to the range from min price to max price in chain stores
+    data = np.clip(a=(data - data.min() + 10), a_min=min_p, a_max=max_p)
+
+    return np.random.choice(a=data, size=sample_size)
+
+
+class Goods :
+
+    def __init__(self) :
+        # Formation of prices for goods
+        prices = get_prices(sample_size=GOODS_CAPACITY)
+
+        # Formation of discounts on goods
+        discounts = np.random.choice(
+            a=settings.store_chain.goods.discounts.discounts_values,
+            p=settings.store_chain.goods.discounts.discounts_probs,
+            size=GOODS_CAPACITY
+        )
+        t_goods = (
+            [
+                [x, y] for x in range(*RANGE_CATEGORIES)
+                       for y in range(0, settings.store_chain.goods.category_capacity[x] + 1)
+            ]
+        )
+        self.goods: list[Item] = [Item(c, i, p, d) for (c, i), p, d in zip(t_goods, prices, discounts)]
+
+    def get_basket(self, items_in_basket: int) -> list[Item]:
+        return None
+
+
+goods = Goods()
+
+
 class ReceiptLine :
-    ...
+
+    def __init__(self) :
+        self._category = random.randint(*RANGE_CATEGORIES)
+        self._item = (
+                f'{settings.store_chain.goods.name_prefix[self._category]}'+
+                f'{random.randint(0, settings.store_chain.goods.category_capacity[self._category])}'
+        )
+        self._amount = 0
+        self._price = 0
+        self._discount = 0
 
 
 class Receipt :
-    ...
+
+    def __init__(self, time_receipt: any, lines_in_receipt: int) :
+        self._time_receipt = datetime.fromtimestamp(time_receipt)
+        self._lines: list[ReceiptLine] = []
+
+        for ln in range(lines_in_receipt) :
+            self._lines.append(ReceiptLine())
+
 
 
 class CashRegister :
@@ -36,11 +118,17 @@ class CashRegister :
         log.logger.debug(f'The "{self._id_cash_reg}" cash register has been created in the "{self._id_store}" store '
                          f'({len(self._receipts_times)} sales will be processed).')
 
-    async def create_cash_reg_day(self):
-        # self._receipts_times =
-        ...
-        # times=np.random.choice(a=self._times, size=self._daily_load)
 
+    async def create_cash_reg_day(self) :
+        # Sorting receipts by time
+        self._receipts_times.sort()
+        # Generating the number of lines in each receipt
+        lines_in_receipts: np.ndarray[int] = np.floor(np.random.exponential(2, size=len(self._receipts_times)) + 1).astype(int)
+        # Creating all receipts
+        for i, tm in enumerate(self._receipts_times) :
+            self._receipts.append(
+                Receipt(time_receipt=tm, lines_in_receipt=lines_in_receipts[i])
+            )
 
 
 class Store :
