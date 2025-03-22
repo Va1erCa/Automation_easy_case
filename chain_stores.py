@@ -30,6 +30,13 @@ class Item :
     item_key: int
     price: int
     discount: float
+
+# The data structure for storing the receipt line
+@dataclass(slots=True, frozen=True)
+class ReceiptLine :
+    item: Item
+    amount: int
+
 #
 # class Item :
 #     def __init__(self, category_key: int, item_key: int, price: int, discount: int) :
@@ -73,37 +80,34 @@ class Goods :
                        for y in range(0, settings.store_chain.goods.category_capacity[x] + 1)
             ]
         )
-        self.goods: list[Item] = [Item(c, i, p, d) for (c, i), p, d in zip(t_goods, prices, discounts)]
+        # Formation of goods
+        self.goods: np.ndarray = np.array([Item(c, i, p, d) for (c, i), p, d in zip(t_goods, prices, discounts)])
 
-    def get_basket(self, items_in_basket: int) -> list[Item]:
-        return None
+        #
+        self.quantities: np.ndarray = np.floor(np.random.exponential(2, size=GOODS_CAPACITY*10) + 1).astype(int)
+
+
+    def get_basket(self, items_in_basket: int) -> np.ndarray :
+        return np.asarray(
+            [
+                ReceiptLine(i, a) for i, a in zip(np.random.choice(a=self.goods, size=items_in_basket),
+                                                  np.random.choice(a=self.quantities, size=items_in_basket))
+            ]
+        )
 
 
 goods = Goods()
 
-
-class ReceiptLine :
-
-    def __init__(self) :
-        self._category = random.randint(*RANGE_CATEGORIES)
-        self._item = (
-                f'{settings.store_chain.goods.name_prefix[self._category]}'+
-                f'{random.randint(0, settings.store_chain.goods.category_capacity[self._category])}'
-        )
-        self._amount = 0
-        self._price = 0
-        self._discount = 0
+#
+# def get_receipt_lines(amount: int) -> list[ReceiptLine]:
+#     ...
 
 
 class Receipt :
 
     def __init__(self, time_receipt: any, lines_in_receipt: int) :
         self._time_receipt = datetime.fromtimestamp(time_receipt)
-        self._lines: list[ReceiptLine] = []
-
-        for ln in range(lines_in_receipt) :
-            self._lines.append(ReceiptLine())
-
+        self._lines: np.ndarray = goods.get_basket(lines_in_receipt)
 
 
 class CashRegister :
@@ -114,7 +118,7 @@ class CashRegister :
         #
         self._receipts_times: np.ndarray = times
         #
-        self._receipts: list[Receipt] = []
+        self._receipts: np.ndarray | None = None
         log.logger.debug(f'The "{self._id_cash_reg}" cash register has been created in the "{self._id_store}" store '
                          f'({len(self._receipts_times)} sales will be processed).')
 
@@ -122,13 +126,12 @@ class CashRegister :
     async def create_cash_reg_day(self) :
         # Sorting receipts by time
         self._receipts_times.sort()
-        # Generating the number of lines in each receipt
-        lines_in_receipts: np.ndarray[int] = np.floor(np.random.exponential(2, size=len(self._receipts_times)) + 1).astype(int)
+        # Generating the number of lines in each receipt (from goods.quantities - exponential distribution)
+        lines_in_receipts: np.ndarray[int] = np.random.choice(a=goods.quantities,size=len(self._receipts_times))
         # Creating all receipts
-        for i, tm in enumerate(self._receipts_times) :
-            self._receipts.append(
-                Receipt(time_receipt=tm, lines_in_receipt=lines_in_receipts[i])
-            )
+        self._receipts = np.asarray(
+            [Receipt(tms, lns) for tms, lns in zip(self._receipts_times, lines_in_receipts)]
+        )
 
 
 class Store :

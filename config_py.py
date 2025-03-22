@@ -40,7 +40,7 @@ class PriceDistributionsSettings(BaseModel) :
 
 class DiscountsSettings(BaseModel) :
     min_discount_price: int = Field(default=500, description='the minimum price value when the discount can be applied')
-    discounts_values: list[int] = Field(description='available values of discounts')
+    discounts_values: list[float] = Field(description='available values of discounts')
     discounts_probs: list[float] = Field(description='values of the probabilities of occurrence of each discount')
 
 class GoodsSettings(BaseModel) :

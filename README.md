@@ -5,7 +5,7 @@
 
 ### Особенности реализации (implementation features)
 Реализованы два скрипта:
-1. скрипт имитирующий выгрузку кассовых чеков торговой сети: [daily_sales_generator.py](daily_sales_generator.py) 
+1. скрипт имитирующий работу торговой сети и выгружающий чеки: [daily_sales_generator.py](daily_sales_generator.py) 
 2. скрипт обрабатывающий выгрузку и сохраняющий все чеки в бд Postgresql: [daily_sales_uploader.py](daily_sales_uploader.py)  
 
 Моделирование каждого дня работы торговой сети происходит согласно регламента изложенного 
