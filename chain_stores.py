@@ -37,13 +37,12 @@ class ReceiptLine :
     item: Item
     amount: int
 
-#
-# class Item :
-#     def __init__(self, category_key: int, item_key: int, price: int, discount: int) :
-#         self._category_key: int = category_key
-#         self._item_key: int = item_key
-#         self._price: int = price
-#         self._discount: int = discount
+# The data structure for storing the receipt
+@dataclass(slots=True, frozen=True)
+class Receipt :
+    time_receipt: datetime
+    receipt_lines: np.ndarray
+
 
 def get_prices(sample_size: int) :
     min_p, max_p = settings.store_chain.goods.price_distribution.range_prices
@@ -92,22 +91,11 @@ class Goods :
             [
                 ReceiptLine(i, a) for i, a in zip(np.random.choice(a=self.goods, size=items_in_basket),
                                                   np.random.choice(a=self.quantities, size=items_in_basket))
-            ]
+            ], dtype=ReceiptLine
         )
 
 
 goods = Goods()
-
-#
-# def get_receipt_lines(amount: int) -> list[ReceiptLine]:
-#     ...
-
-
-class Receipt :
-
-    def __init__(self, time_receipt: any, lines_in_receipt: int) :
-        self._time_receipt = datetime.fromtimestamp(time_receipt)
-        self._lines: np.ndarray = goods.get_basket(lines_in_receipt)
 
 
 class CashRegister :
@@ -130,8 +118,43 @@ class CashRegister :
         lines_in_receipts: np.ndarray[int] = np.random.choice(a=goods.quantities,size=len(self._receipts_times))
         # Creating all receipts
         self._receipts = np.asarray(
-            [Receipt(tms, lns) for tms, lns in zip(self._receipts_times, lines_in_receipts)]
+            [
+                Receipt(
+                    time_receipt=datetime.fromtimestamp(tms),
+                    receipt_lines=goods.get_basket(lns)
+                ) for tms, lns in zip(self._receipts_times, lines_in_receipts)
+            ]
         )
+
+
+    async def get_chunk(self, receipt: Receipt) -> pd.DataFrame:
+        df = pd.DataFrame(
+            [
+                {
+                    'id_store':self._id_store,
+                    'id_cash_reg':self._id_cash_reg,
+                    'time' : r.time_receipt,
+                    'category_key' : ln.item.category_key,
+                    'item_key' : ln.item.item_key,
+                    'price' : ln.item.price,
+                    'discount' : ln.item.discount,
+                    'amount' : ln.amount
+                }
+                for r in [receipt] for ln in r.receipt_lines
+            ]
+        )
+
+        return df
+
+
+    async def save_cash_reg_day(self) -> pd.DataFrame :
+        # Async run processes of creating sales for each store
+        async with asyncio.TaskGroup() as tg :
+            tasks = []
+            for r in self._receipts :
+                tasks.append(tg.create_task(self.get_chunk(receipt=r)))
+
+        return pd.concat([task.result() for task in tasks])
 
 
 class Store :
@@ -191,6 +214,17 @@ class Store :
             task.result()
 
 
+    async def save_store_day(self) -> pd.DataFrame:
+        # Async run processes of saving sales for each cash register
+        async with asyncio.TaskGroup() as tg :
+            tasks = []
+            for cr in self._cash_regs :
+                tasks.append(tg.create_task(cr.save_cash_reg_day()))
+
+        return pd.concat([task.result() for task in tasks])
+
+
+
 class ChainStores :
 
     def __init__(self, chain_settings: StoreChainSettings, processing_day: datetime) :
@@ -233,8 +267,17 @@ class ChainStores :
         for task in tasks :
             task.result()
 
-    def save_day(self) :
-        ...
+
+    async def save_day(self) :
+        async with asyncio.TaskGroup() as tg :
+            tasks = []
+            for s in self._stores :
+                tasks.append(tg.create_task(s.save_store_day()))
+
+        # Async run tasks of saving sales for each store
+        dfs = [task.result() for task in tasks]
+
+        return pd.concat(dfs)
 
 
 
