@@ -45,7 +45,7 @@
         },
         "range_of_chain_daily_load": [0.2, 0.5],
         "range_of_cash_regs_daily_load" : [0.6, 1.0],
-        "min_sec_per_cash_transaction": 90
+        "min_sec_per_cash_transaction": 60
     },
     "sales_storing_path":  "data"
 }

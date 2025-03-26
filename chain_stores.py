@@ -64,6 +64,9 @@ def get_prices(sample_size: int) :
 class Goods :
 
     def __init__(self) :
+        # Setting the seed-coefficient for the repeatability of the goods parameters
+        np.random.seed(0)
+
         # Formation of prices for goods
         prices = get_prices(sample_size=GOODS_CAPACITY)
 
@@ -82,7 +85,7 @@ class Goods :
         # Formation of goods
         self.goods: np.ndarray = np.array([Item(c, i, p, d) for (c, i), p, d in zip(t_goods, prices, discounts)])
 
-        #
+        # Formation of the distribution of quantities for general use
         self.quantities: np.ndarray = np.floor(np.random.exponential(2, size=GOODS_CAPACITY*10) + 1).astype(int)
 
 
@@ -100,9 +103,9 @@ goods = Goods()
 
 class CashRegister :
 
-    def __init__(self, id_store: str, id_cash_reg: int, times: np.ndarray) :
-        self._id_store: str = id_store
-        self._id_cash_reg: str = ascii_lowercase[id_cash_reg]
+    def __init__(self, id_store: int, id_cash_reg: int, times: np.ndarray) :
+        self._id_store: int = id_store
+        self._id_cash_reg: int = id_cash_reg            # ascii_lowercase[id_cash_reg]
         #
         self._receipts_times: np.ndarray = times
         #
@@ -133,6 +136,11 @@ class CashRegister :
                 {
                     'id_store':self._id_store,
                     'id_cash_reg':self._id_cash_reg,
+                    'doc_id': (
+                        ascii_uppercase[self._id_store-1]+
+                        ascii_lowercase[self._id_cash_reg-1]+
+                        r.time_receipt.strftime('%Y%m%d%H%M%S')
+                    ),
                     'time' : r.time_receipt,
                     'category_key' : ln.item.category_key,
                     'item_key' : ln.item.item_key,
@@ -168,7 +176,7 @@ class Store :
                  processing_date: datetime,
                  store_daily_load: float) :
         #
-        self._id_store = ascii_uppercase[id_store]
+        self._id_store = id_store   # ascii_uppercase[id_store]
         self._num_cash_regs: int = num_cash_regs
         # self._rank: int = rank
         self._opening_hour: int  = opening_hour
@@ -196,7 +204,7 @@ class Store :
             self._cash_regs.append(
                 CashRegister(
                     id_store=self._id_store,
-                    id_cash_reg=i,
+                    id_cash_reg=i+1,
                     times=np.random.choice(
                         a=self._times,
                         size=round(daily_load * random.uniform(*settings.store_chain.range_of_cash_regs_daily_load))
@@ -216,10 +224,16 @@ class Store :
 
     async def save_store_day(self) -> pd.DataFrame:
         # Async run processes of saving sales for each cash register
+
+
         async with asyncio.TaskGroup() as tg :
             tasks = []
             for cr in self._cash_regs :
                 tasks.append(tg.create_task(cr.save_cash_reg_day()))
+
+        # for task in tasks :
+        #     task.result()
+
 
         return pd.concat([task.result() for task in tasks])
 
@@ -248,7 +262,7 @@ class ChainStores :
         for i in range(len(self._chain_settings.stores.cash_registers)) :
             self._stores.append(
                 Store(
-                    id_store=i,
+                    id_store=i+1,
                     num_cash_regs=self._chain_settings.stores.cash_registers[i],
                     opening_hour=self._chain_settings.stores.opening_hours[i][0],
                     closing_hour=self._chain_settings.stores.opening_hours[i][1],
@@ -269,15 +283,38 @@ class ChainStores :
 
 
     async def save_day(self) :
+
+        _check_path(path_save=settings.sales_storing_path)
+
         async with asyncio.TaskGroup() as tg :
             tasks = []
             for s in self._stores :
                 tasks.append(tg.create_task(s.save_store_day()))
 
-        # Async run tasks of saving sales for each store
-        dfs = [task.result() for task in tasks]
+        # Async run tasks of saving sales for each store in a data frame
+        df = pd.concat([task.result() for task in tasks])
 
-        return pd.concat(dfs)
+        # Subsequent processing of the data frame
+        _save_to_csv(df=df, path_save=settings.sales_storing_path, name='temp.csv')
+
+        return df
+
+from pathlib import Path, PurePath
+
+
+def _check_path(path_save: str) :
+    path = PurePath.joinpath(dir_name, path_save)
+    if not Path(path).is_dir() :
+        # Creating a log folder if it doesn't exist yet
+        Path.mkdir(path)
+
+
+def _save_to_csv(df: pd.DataFrame, path_save: str, name: str) -> bool :
+    path = PurePath.joinpath(dir_name, path_save)
+    df.to_csv(PurePath.joinpath(path, name), index=False)
+
+    return True
+
 
 
 

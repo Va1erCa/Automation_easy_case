@@ -4,7 +4,6 @@ import random
 import asyncio, logging
 from datetime import datetime, timedelta
 
-
 from config_py import settings, StoreChainSettings, dir_name
 import logger as log
 from logger import set_logger #, logger
@@ -13,15 +12,12 @@ from chain_stores import ChainStores
 
 log.logger = set_logger(log_set=settings.logging_generating)
 
+
 # logger = logger.logger
 # logger: logging.Logger = set_logger(log_set=settings.logging_generating)
 # logger.debug('Loading module <daily_sales_generator>')
 # # logger: logging.Logger = set_logger(log_set=settings.logging_uploading)
 # logger.debug('Loading module <daily_sales_uploader>')
-
-
-async def gen_sales_store(store_cash_registers: int, store_rank: int, store_opening_hours: list[int]) -> bool :
-    ...
 
 
 async def main() :
@@ -43,27 +39,10 @@ async def main() :
     chain_stores = ChainStores(chain_settings=settings.store_chain, processing_day=operating_date)
     await chain_stores.create_day()
     df = await chain_stores.save_day()
+
     pass
 
-    # stores = settings.store_chain.stores
-    # goods = settings.store_chain.goods
-    # path = settings.sales_storing_path
-
     # try :
-    #     async with asyncio.TaskGroup() as tg :
-    #         tasks = []
-    # for cash, rank, hours in zip(stores.cash_registers, stores.ranks, stores.opening_hours) :
-    #     print(cash, rank, hours)
-                # tasks.append(
-                #     tg.create_task(
-                #         gen_sales_store(
-                #             store_cash_registers: int, store_rank: int, store_opening_hours: list[int]
-                #     client=client,
-                #     selected_channels=settings.analyst.channel_selection_filter)
-
-    #     tg_channels = task1.result()
-    #     db_channels = task2.result()
-    #
     #
     # except Exception as e :
     #     logger.error(f'Error: {e}')
@@ -71,7 +50,6 @@ async def main() :
 
     log.logger.info(f'The generator of the day`s sales was completed, '
                 f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
-
 
     # await asyncio.sleep(0.1)
     return
