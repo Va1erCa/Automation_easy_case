@@ -31,7 +31,7 @@ def _save_to_csv(df: pd.DataFrame, path_save: str, name: str) -> bool :
     try:
         df.to_csv(PurePath.joinpath(path, name), index=False)
     except Exception as e:
-        log.logger.error(f'A error has occurred: {e}')
+        log.logger.error(f'An error has occurred: {e}')
         return False
 
     return True
@@ -81,6 +81,15 @@ def save_by_units(df: pd.DataFrame, path_save: str) -> None:
         for cr in cash_regs :
             try :
                 df_chunk = df.loc[s, cr][:]
-                _save_to_csv(df=df_chunk, path_save=path_save, name=f'{s}_{cr}.csv')
+                if _save_to_csv(df=df_chunk, path_save=path_save, name=f'{s}_{cr}.csv') :
+                    log.logger.info(
+                        f'The sales history of cash register No. {cr} from store No. {s} has been successfully '
+                        f'saved in the file "{s}_{cr}.csv".'
+                    )
+                else :
+                    log.logger.info(
+                        f'The sales history of cash register No. {cr} from store No. {s} has not been saved!'
+                    )
+
             except KeyError as e :
                 break
