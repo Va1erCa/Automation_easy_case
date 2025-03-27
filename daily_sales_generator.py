@@ -1,3 +1,5 @@
+# A module for the regular formation of the history of our network of stores
+
 import pandas as pd
 import numpy as np
 import random
@@ -38,9 +40,9 @@ async def main() :
     # await asyncio.sleep(0.01)
     chain_stores = ChainStores(chain_settings=settings.store_chain, processing_day=operating_date)
     await chain_stores.create_day()
-    df = await chain_stores.save_day()
+    await chain_stores.save_day()
 
-    pass
+    # pass
 
     # try :
     #

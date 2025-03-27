@@ -1,13 +1,11 @@
-"""
-The module of functions for logging
-"""
+# The module of functions for logging.
+
 from datetime import datetime
-import os
 import re
 import logging
-from pathlib import Path, PurePath, WindowsPath
+from pathlib import Path, PurePath
 
-from config_py import settings, dir_name, LogSettings
+from config_py import dir_name, LogSettings
 
 
 logger: logging.Logger | None = None    # Global variable for save only one instance of the logger
@@ -18,6 +16,9 @@ format_line = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 
 class ColoredFormatter(logging.Formatter):
+    '''
+    Color illumination of the console logger
+    '''
     COLORS = {'DEBUG': '\033[94m', 'INFO': '\033[92m', 'WARNING': '\033[93m',
               'ERROR': '\033[91m', 'CRITICAL': '\033[95m'}
 
@@ -28,6 +29,11 @@ class ColoredFormatter(logging.Formatter):
 
 
 def _init_logging(log_set: LogSettings) -> str :
+    '''
+    Deploying the infrastructure for file logging
+    :param log_set: settings applied to the logger from the configuration file
+    :return: the file path and name for file logging
+    '''
     prefix_name= log_set.file_name_prefix
     path = PurePath.joinpath(dir_name, log_set.logs_folder_path)
     max_num_files = log_set.max_num_log_files
@@ -59,12 +65,19 @@ def _init_logging(log_set: LogSettings) -> str :
     return PurePath.joinpath(path, new_log_name)
 
 
-# def set_logger(level: int = logging.DEBUG, to_file: bool = True) -> logging.Logger:
 def set_logger(log_set: LogSettings) -> logging.Logger :
+    '''
+    Logger instance creation function
+    :param log_set: settings applied to the logger from the configuration file
+    :return: logger instance
+    '''
     global logger
     # Only one, the first launch
     if logger is None:
+        # we get the basic logger
         logger = logging.getLogger(log_set.name)
+
+        # setting the logger level
         logger.setLevel(log_set.level)
 
         # configuring logger output to the console

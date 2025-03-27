@@ -1,3 +1,5 @@
+# A module for modelling the structure of chain stores, goods, and sales.
+
 import pandas as pd
 import numpy as np
 import random
@@ -6,16 +8,10 @@ from datetime import datetime
 from dataclasses import dataclass
 from string import ascii_uppercase, ascii_lowercase
 
-from config_py import settings, StoreChainSettings, dir_name
+from config_py import settings, StoreChainSettings
 import logger as log
+from gen_utils import _check_path, _save_to_csv, post_process_df, save_by_units
 
-# logger: logging.Logger = set_logger(log_set=settings.logging_generating)
-# logger.debug('Loading module <daily_sales_generator>')
-# # logger: logging.Logger = set_logger(log_set=settings.logging_uploading)
-# logger.debug('Loading module <daily_sales_uploader>')
-
-# random.seed(42)
-# np.random.seed(42)
 
 RANGE_CATEGORIES = (0, len(settings.store_chain.goods.categories))
 
@@ -40,7 +36,7 @@ class ReceiptLine :
 # The data structure for storing the receipt
 @dataclass(slots=True, frozen=True)
 class Receipt :
-    time_receipt: datetime
+    receipt_time: datetime
     receipt_lines: np.ndarray
 
 
@@ -123,7 +119,7 @@ class CashRegister :
         self._receipts = np.asarray(
             [
                 Receipt(
-                    time_receipt=datetime.fromtimestamp(tms),
+                    receipt_time=datetime.fromtimestamp(tms),
                     receipt_lines=goods.get_basket(lns)
                 ) for tms, lns in zip(self._receipts_times, lines_in_receipts)
             ]
@@ -139,9 +135,9 @@ class CashRegister :
                     'doc_id': (
                         ascii_uppercase[self._id_store-1]+
                         ascii_lowercase[self._id_cash_reg-1]+
-                        r.time_receipt.strftime('%Y%m%d%H%M%S')
+                        r.receipt_time.strftime('%Y%m%d%H%M%S')
                     ),
-                    'time' : r.time_receipt,
+                    'receipt_time' : r.receipt_time,
                     'category_key' : ln.item.category_key,
                     'item_key' : ln.item.item_key,
                     'price' : ln.item.price,
@@ -155,7 +151,7 @@ class CashRegister :
         return df
 
 
-    async def save_cash_reg_day(self) -> pd.DataFrame :
+    async def read_cash_reg_day(self) -> pd.DataFrame :
         # Async run processes of creating sales for each store
         async with asyncio.TaskGroup() as tg :
             tasks = []
@@ -222,18 +218,17 @@ class Store :
             task.result()
 
 
-    async def save_store_day(self) -> pd.DataFrame:
+    async def read_store_day(self) -> pd.DataFrame:
         # Async run processes of saving sales for each cash register
 
 
         async with asyncio.TaskGroup() as tg :
             tasks = []
             for cr in self._cash_regs :
-                tasks.append(tg.create_task(cr.save_cash_reg_day()))
+                tasks.append(tg.create_task(cr.read_cash_reg_day()))
 
         # for task in tasks :
         #     task.result()
-
 
         return pd.concat([task.result() for task in tasks])
 
@@ -289,32 +284,19 @@ class ChainStores :
         async with asyncio.TaskGroup() as tg :
             tasks = []
             for s in self._stores :
-                tasks.append(tg.create_task(s.save_store_day()))
+                tasks.append(tg.create_task(s.read_store_day()))
 
         # Async run tasks of saving sales for each store in a data frame
         df = pd.concat([task.result() for task in tasks])
 
         # Subsequent processing of the data frame
+        df = post_process_df(df)
+
         _save_to_csv(df=df, path_save=settings.sales_storing_path, name='temp.csv')
 
-        return df
+        save_by_units(df=df, path_save=settings.sales_storing_path)
 
-from pathlib import Path, PurePath
-
-
-def _check_path(path_save: str) :
-    path = PurePath.joinpath(dir_name, path_save)
-    if not Path(path).is_dir() :
-        # Creating a log folder if it doesn't exist yet
-        Path.mkdir(path)
-
-
-def _save_to_csv(df: pd.DataFrame, path_save: str, name: str) -> bool :
-    path = PurePath.joinpath(dir_name, path_save)
-    df.to_csv(PurePath.joinpath(path, name), index=False)
-
-    return True
-
+        return
 
 
 

@@ -1,4 +1,5 @@
-from datetime import datetime
+# A module for processing application settings.
+
 from pathlib import Path, PurePath
 from pydantic import BaseModel, Field, PositiveInt, computed_field
 import logging
