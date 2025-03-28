@@ -7,7 +7,7 @@ from config_py import settings
 import logger as log
 from logger import set_logger
 
-from sql.database import recreate_tables
+from sql.database_create import recreate_tables
 
 log.logger = set_logger(log_set=settings.logging_uploading)
 
@@ -22,7 +22,7 @@ async def main() :
 
     # log.logger.info(f'Operating date: {operating_date.date()}')
 
-    await recreate_tables()
+    # await recreate_tables()
 
     # Checking for a day off
     # if operating_date.weekday() == 6 :
