@@ -1,0 +1,1 @@
+D:\MyPythonProjects\Automation_easy_case\.venv\Scripts\python.exe D:\MyPythonProjects\Automation_easy_case\daily_sales_generator.py
