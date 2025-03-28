@@ -20,6 +20,7 @@ from psycopg2 import extensions
 from dataclasses import dataclass
 from typing import NamedTuple
 
+import logger as log
 from config_py import DBConnectionSettings
 
 # Type's hints
@@ -50,11 +51,11 @@ class Database :
             self.connect: ConnectionType = psycopg2.connect(
                 **db_connect_set.model_dump()
             )
-            logger.debug('The database has been successfully connected.')
+            log.logger.debug('The database has been successfully connected.')
             self.is_connected = True
 
         except Exception as e :
-            logger.error(f'An error occurred while connecting database: {e}')
+            log.logger.error(f'An error occurred while connecting database: {e}')
             self.is_connected = False
 
     def __del__(self) :
@@ -134,11 +135,11 @@ class Database :
                 if overwrite :
                     query = f'DROP TABLE {table_name} CASCADE'
                     if not self.run_query(query).is_successful :
-                        logger.debug(f'The already existing table {table_name} has not been deleted.')
+                        log.logger.debug(f'The already existing table {table_name} has not been deleted.')
                         return DBQueryResult(False, None)
-                    logger.debug(f'The already existing table {table_name} has been deleted.')
+                    log.logger.debug(f'The already existing table {table_name} has been deleted.')
                 else:
-                    logger.debug(f'Error, table {table_name} is already there.')
+                    log.logger.debug(f'Error, table {table_name} is already there.')
                     return DBQueryResult(False, None)
             query = f'CREATE TABLE {table_name} ({columns_statement})'
             return self.run_query(query)
@@ -192,6 +193,6 @@ class Database :
         ''' Closing the database connection '''
         try :
             self.connect.close()
-            logger.debug('The connection to the database is closed.')
+            log.logger.debug('The connection to the database is closed.')
         except Exception as e :
-            logger.debug(f'An error occurred when closing the connection: {e}')
+            log.logger.debug(f'An error occurred when closing the connection: {e}')

@@ -1,14 +1,11 @@
 # A module for the regular formation of the history of our network of stores
 
-import pandas as pd
-import numpy as np
-import random
-import asyncio, logging
+import asyncio
 from datetime import datetime, timedelta
 
-from config_py import settings, StoreChainSettings, dir_name
+from config_py import settings
 import logger as log
-from logger import set_logger #, logger
+from logger import set_logger
 
 from chain_stores import ChainStores
 
