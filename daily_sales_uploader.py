@@ -9,8 +9,7 @@ from logger import set_logger
 
 from sql.database_create import recreate_tables
 
-log.logger = set_logger(log_set=settings.logging_uploading)
-
+log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.uploading)
 
 
 async def main() :

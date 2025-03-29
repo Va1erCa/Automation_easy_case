@@ -5,7 +5,7 @@ import re
 import logging
 from pathlib import Path, PurePath
 
-from config_py import dir_name, LogSettings
+from config_py import dir_name, LogCommonSettings, LogSpecificSettings
 
 
 logger: logging.Logger | None = None    # Global variable for save only one instance of the logger
@@ -28,15 +28,16 @@ class ColoredFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def _init_logging(log_set: LogSettings) -> str :
+def _init_logging(log_common_set: LogCommonSettings, log_specific_set: LogSpecificSettings) -> str :
     '''
     Deploying the infrastructure for file logging
-    :param log_set: settings applied to the logger from the configuration file
+    :param log_common_set: settings applied to the logger from the common section of the configuration file
+    :param log_specific_set: settings applied to the logger from the specific section of the configuration file
     :return: the file path and name for file logging
     '''
-    prefix_name= log_set.file_name_prefix
-    path = PurePath.joinpath(dir_name, log_set.logs_folder_path)
-    max_num_files = log_set.max_num_log_files
+    prefix_name= log_specific_set.file_name_prefix
+    path = PurePath.joinpath(dir_name, log_common_set.logs_folder_path)
+    max_num_files = log_common_set.max_num_log_files
 
     new_log_name = (prefix_name + datetime.now().strftime('%Y-%m-%d_%H-%M') + '.log')
 
@@ -65,20 +66,21 @@ def _init_logging(log_set: LogSettings) -> str :
     return PurePath.joinpath(path, new_log_name)
 
 
-def set_logger(log_set: LogSettings) -> logging.Logger :
+def set_logger(log_common_set: LogCommonSettings, log_specific_set: LogSpecificSettings) -> logging.Logger :
     '''
     Logger instance creation function
-    :param log_set: settings applied to the logger from the configuration file
+    :param log_common_set: settings applied to the logger from the common section of the configuration file
+    :param log_specific_set: settings applied to the logger from the specific section of the configuration file
     :return: logger instance
     '''
     global logger
     # Only one, the first launch
     if logger is None:
         # we get the basic logger
-        logger = logging.getLogger(log_set.name)
+        logger = logging.getLogger(log_specific_set.name)
 
         # setting the logger level
-        logger.setLevel(log_set.level)
+        logger.setLevel(log_common_set.level)
 
         # configuring logger output to the console
         handler = logging.StreamHandler()
@@ -86,9 +88,9 @@ def set_logger(log_set: LogSettings) -> logging.Logger :
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-        if log_set.to_file :
+        if log_common_set.to_file :
             # adding configuring logger output to the file (if specified)
-            handler = logging.FileHandler(_init_logging(log_set), encoding='utf-16')
+            handler = logging.FileHandler(_init_logging(log_common_set, log_specific_set), encoding='utf-16')
             formatter = logging.Formatter(format_line)
             handler.setFormatter(formatter)
             logger.addHandler(handler)

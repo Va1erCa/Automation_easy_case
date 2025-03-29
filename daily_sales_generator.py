@@ -9,7 +9,7 @@ from logger import set_logger
 
 from chain_stores import ChainStores
 
-log.logger = set_logger(log_set=settings.logging_generating)
+log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.generating)
 
 
 # logger = logger.logger

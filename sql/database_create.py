@@ -1,12 +1,13 @@
 # The module for the first initialization of the database of our store chain
 
 from pgdb import Database, Row, Rows
-from config_py import settings
+from datetime import datetime, timedelta
 
+from config_py import settings
 import logger as log
 from logger import set_logger
 
-log.logger = set_logger(log_set=settings.logging_uploading)
+log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.db_creating)
 
 
 def recreate_tables() -> bool:
@@ -20,7 +21,7 @@ def recreate_tables() -> bool:
                                 first_name varchar NOT NULL,
                                 middle_name varchar NULL,
                                 last_name varchar NOT NULL,
-                                salary numeric NULL,
+                                salary numeric(10, 2) NULL,
                                 phone varchar NULL,
                                 CONSTRAINT stuff_pk PRIMARY KEY (id)
                                 ''',
@@ -63,7 +64,7 @@ def recreate_tables() -> bool:
     if not db.create_table(table_name='discount',
                            columns_statement='''                            
                                 id int4 NOT NULL,
-                                value numeric NOT NULL,
+                                value numeric(4, 2) NOT NULL,
                                 promo_action varchar NULL,
                                 CONSTRAINT discount_pk PRIMARY KEY (id)
                                 ''',
@@ -74,9 +75,9 @@ def recreate_tables() -> bool:
                                 id int4 NOT NULL,
                                 item_name varchar NOT NULL,
                                 category_id int4 NOT NULL,
-                                price numeric NOT NULL,
+                                price numeric(10, 2) NOT NULL,
                                 discount_id int4 NOT NULL,
-                                purchase_price numeric NULL,
+                                purchase_price numeric(10, 2) NULL,
                                 CONSTRAINT goods_pk PRIMARY KEY (id),
                                 CONSTRAINT goods_category_fk FOREIGN KEY (category_id) 
                                     REFERENCES public.category(id) ON UPDATE CASCADE,
@@ -114,6 +115,19 @@ def recreate_tables() -> bool:
     return True
 
 
-if __name__ == '__main__' :
+def main() :
 
-    print(recreate_tables())
+    log.logger.info('The process of creating a Postgres database has been started.')
+
+    time_start = datetime.now()
+
+
+    if recreate_tables() :
+        ...
+
+    log.logger.info(f'The Postgres database creation process is complete, '
+                    f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
+
+
+if __name__ == '__main__' :
+    main()

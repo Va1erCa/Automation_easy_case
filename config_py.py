@@ -18,16 +18,25 @@ class DBConnectionSettings(BaseModel) :
     user: str = Field(default='postgres', description='connection user')
     password: str = Field(default='123456', description='connection password')
 
-class LogSettings(BaseModel) :
-    name: str = Field(default='auto_app', description='name of logger')
+class LogCommonSettings(BaseModel) :
     level: str = Field(default='INFO', description='level of logging')
     @computed_field
     def level_logging(self) -> PositiveInt:
         return logger_level[self.level]
     to_file: bool = Field(default=False, description='file or console mode of the registrar')
     logs_folder_path: str = Field(default='.log', description='path to save log files')
-    file_name_prefix: str = Field(default='log_', description='prefix of the log file name')
     max_num_log_files: PositiveInt = Field(default=10, description='Maximum enabled number of log files')
+
+class LogSpecificSettings(BaseModel) :
+    name: str = Field(default='auto_app', description='name of logger')
+    file_name_prefix: str = Field(default='log_', description='prefix of the log file name')
+
+class LogSettings(BaseModel) :
+    common: LogCommonSettings = Field(description='general section for logging settings')
+    db_creating: LogSpecificSettings = Field(description='the logging settings section for the database initiation stage')
+    generating: LogSpecificSettings = Field(description='the logging settings section for the sales generation stage')
+    uploading: LogSpecificSettings = Field(description='the logging settings section for the stage of uploading sales '
+                                                     'to the database')
 
 # Domain settings
 class StoreSettings(BaseModel) :
@@ -60,8 +69,7 @@ class StoreChainSettings(BaseModel) :
 
 class AppSettings(BaseModel):
     database_connection: DBConnectionSettings = Field(description='data base connection settings')
-    logging_generating: LogSettings = Field(description='logging settings for the task of generating sales data')
-    logging_uploading: LogSettings = Field(description='logging settings for the task of uploading sales data to the database')
+    logging: LogSettings = Field(description='logging settings')
     store_chain: StoreChainSettings = Field(description='settings for the retail chain of stores')
     sales_storing_path: str = Field(default='data', description='folder for storing sales data')
 

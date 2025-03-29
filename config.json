@@ -6,21 +6,25 @@
         "user": "postgres",
         "password": "123456"
     },
-    "logging_generating": {
-        "name": "sales_gen",
-        "level": "DEBUG",
-        "to_file" : true,
-        "logs_folder_path": ".log",
-        "file_name_prefix": "gen_log_",
-        "max_num_log_files": 30
-    },
-    "logging_uploading": {
-        "name": "sales_up",
-        "level" : "DEBUG",
-        "to_file" : true,
-        "logs_folder_path": ".log",
-        "file_name_prefix": "up_log_",
-        "max_num_log_files": 30
+    "logging": {
+        "common": {
+            "level": "DEBUG",
+            "to_file" : true,
+            "logs_folder_path": ".log",
+            "max_num_log_files": 30
+        },
+        "db_creating": {
+            "name": "db_create",
+            "file_name_prefix": "db_create_log_"
+        },
+        "generating": {
+            "name": "sales_gen",
+            "file_name_prefix": "gen_log_"
+        },
+        "uploading": {
+            "name": "sales_up",
+            "file_name_prefix": "up_log_"
+        }
     },
     "store_chain": {
         "stores": {
