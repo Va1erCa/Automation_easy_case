@@ -80,7 +80,7 @@ class Database :
                     return DBQueryResult(True, cursor.rowcount)
 
         except Exception as e :
-            print(f"An error occurred while executing the request: {e}")
+            log.logger.error(f"An error occurred while executing the request: {e}")
             return DBQueryResult(False, None)
 
 
@@ -135,11 +135,11 @@ class Database :
                 if overwrite :
                     query = f'DROP TABLE {table_name} CASCADE'
                     if not self.run_query(query).is_successful :
-                        log.logger.debug(f'The already existing table {table_name} has not been deleted.')
+                        log.logger.debug(f'The already existing table "{table_name}" has not been deleted.')
                         return DBQueryResult(False, None)
-                    log.logger.debug(f'The already existing table {table_name} has been deleted.')
+                    log.logger.debug(f'The already existing table "{table_name}" has been deleted.')
                 else:
-                    log.logger.debug(f'Error, table {table_name} is already there.')
+                    log.logger.debug(f'Error, table "{table_name}" is already there.')
                     return DBQueryResult(False, None)
             query = f'CREATE TABLE {table_name} ({columns_statement})'
             return self.run_query(query)
@@ -147,11 +147,22 @@ class Database :
             return DBQueryResult(False, None)
 
 
-    def insert_rows(self, table_name: str, values: Rows) -> DBQueryResult:
+    def insert_rows(
+            self,
+            table_name: str,
+            insert_fields: tuple[str] | None ,
+            values: Rows,
+            returning_field: str|None
+    ) -> DBQueryResult:
         ''' Inserting one or multiple rows into a table. '''
         if table_name and len(values) > 0 and len(values[0]) > 0 :
+            fields_str = ''
+            if insert_fields is not None:
+                fields_str += f'({', '.join(insert_fields)})'
             placeholders = ', '.join(['%s'] * len(values[0]))
-            query = f"INSERT INTO {table_name} VALUES ({placeholders})"
+            query = f"INSERT INTO {table_name} {fields_str} VALUES ({placeholders})"
+            if returning_field is not None:
+                query += f" RETURNING {returning_field}"
             return self.run_query(query, params=values, several=True)
         return DBQueryResult(False, 0)
 

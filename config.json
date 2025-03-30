@@ -48,7 +48,11 @@
                 "discounts_probs":  [0.5, 0.3, 0.10, 0.07, 0.02, 0.01]
             }
         },
-        "range_of_chain_daily_load": [0.2, 0.5],
+        "stuff": {
+            "range_of_manager_salary": [150000, 250000],
+            "range_of_cashier_salary": [40000, 80000]
+        },
+        "range_of_chain_daily_load": [0.3, 0.8],
         "range_of_cash_regs_daily_load" : [0.6, 1.0],
         "min_sec_per_cash_transaction": 60
     },

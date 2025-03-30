@@ -60,11 +60,16 @@ class GoodsSettings(BaseModel) :
     price_distribution: PriceDistributionsSettings =  Field(description='settings of the goods prices')
     discounts: DiscountsSettings = Field(description='settings of the discounts')
 
+class StuffSettings(BaseModel) :
+    range_of_manager_salary: list[int] = Field(description='the range of managers\' salaries')
+    range_of_cashier_salary: list[int] = Field(description='the range of cashiers\' salaries')
+
 class StoreChainSettings(BaseModel) :
     stores: StoreSettings = Field(description='settings of the stores')
     goods: GoodsSettings = Field(description='product settings')
+    stuff: StuffSettings = Field(description='salary ranges')
     range_of_chain_daily_load: list[float] = Field(description='the range of loads on the retail network of stores')
-    range_of_cash_regs_daily_load: list[float] = Field(description='the range of cashier loads')
+    range_of_cash_regs_daily_load: list[float] = Field(description='the range of cash registers loads')
     min_sec_per_cash_transaction: int = Field(default=120, description='minimum time per cash transaction')
 
 class AppSettings(BaseModel):
