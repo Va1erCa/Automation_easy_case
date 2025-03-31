@@ -12,13 +12,6 @@ from chain_stores import ChainStores
 log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.generating)
 
 
-# logger = logger.logger
-# logger: logging.Logger = set_logger(log_set=settings.logging_generating)
-# logger.debug('Loading module <daily_sales_generator>')
-# # logger: logging.Logger = set_logger(log_set=settings.logging_uploading)
-# logger.debug('Loading module <daily_sales_uploader>')
-
-
 async def main() :
     # await set_logger(log_set=settings.logging_generating)
     log.logger.info('The generator of the day`s sales was started.')

@@ -1,13 +1,11 @@
 # A module for regularly uploading the history of our store chain to the postgresql database.
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from config_py import settings
 import logger as log
 from logger import set_logger
-
-from sql.database_create import recreate_tables
 
 log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.uploading)
 
@@ -17,6 +15,8 @@ async def main() :
     log.logger.info('The uploader of the day`s sales was started.')
 
     time_start = datetime.now()
+
+
     # operating_date = time_start - timedelta(days=1)
 
     # log.logger.info(f'Operating date: {operating_date.date()}')
