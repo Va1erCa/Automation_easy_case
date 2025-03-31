@@ -63,6 +63,7 @@ class GoodsSettings(BaseModel) :
 class StuffSettings(BaseModel) :
     range_of_manager_salary: list[int] = Field(description='the range of managers\' salaries')
     range_of_cashier_salary: list[int] = Field(description='the range of cashiers\' salaries')
+    multiplicity_of_the_salary_sum: int = Field(default=50, gt=1, le=10000, description='multiplicity of the salary sum')
 
 class StoreChainSettings(BaseModel) :
     stores: StoreSettings = Field(description='settings of the stores')
@@ -70,7 +71,7 @@ class StoreChainSettings(BaseModel) :
     stuff: StuffSettings = Field(description='salary ranges')
     range_of_chain_daily_load: list[float] = Field(description='the range of loads on the retail network of stores')
     range_of_cash_regs_daily_load: list[float] = Field(description='the range of cash registers loads')
-    min_sec_per_cash_transaction: int = Field(default=120, description='minimum time per cash transaction')
+    min_sec_per_cash_transaction: int = Field(default=120, gt=0, description='minimum time per cash transaction')
 
 class AppSettings(BaseModel):
     database_connection: DBConnectionSettings = Field(description='data base connection settings')

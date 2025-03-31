@@ -50,7 +50,8 @@
         },
         "stuff": {
             "range_of_manager_salary": [150000, 250000],
-            "range_of_cashier_salary": [40000, 80000]
+            "range_of_cashier_salary": [40000, 80000],
+            "multiplicity_of_the_salary_sum": 100
         },
         "range_of_chain_daily_load": [0.3, 0.8],
         "range_of_cash_regs_daily_load" : [0.6, 1.0],

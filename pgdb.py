@@ -163,7 +163,14 @@ class Database :
             query = f"INSERT INTO {table_name} {fields_str} VALUES ({placeholders})"
             if returning_field is not None:
                 query += f" RETURNING {returning_field}"
-            return self.run_query(query, params=values, several=True)
+            if len(values)>1:
+                several = True
+            else:
+                # if insert single row
+                several = False
+                values = values[0]
+
+            return self.run_query(query, params=values, several=several)
         return DBQueryResult(False, 0)
 
 

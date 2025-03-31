@@ -130,13 +130,6 @@ def generate_fake_data(start: int, count: int) -> Rows :
     fake_rows = tuple((str(_), fake.company()[0:30]) for _ in range(start, start+count+1))
     return fake_rows
 
-# class DBStuff(Row) :
-#     #id: int                 # stuff ID - autoincrement field
-#     first_name: str         # employee's name
-#     middle_name: str        # employee's patronymic
-#     last_name: str          # employee's last name
-#     salary: int             # employee's salary
-#     phone: str              # employee's personal phone number
 
 def add_new_employee(db: Database, salary_range: tuple) -> int :
     fake = Faker('ru_RU')
@@ -145,7 +138,7 @@ def add_new_employee(db: Database, salary_range: tuple) -> int :
         first_name, middle_name, last_name = fake.first_name_male(), fake.middle_name_male(), fake.last_name_male()
     else :
         first_name, middle_name, last_name = fake.first_name_female(), fake.middle_name_female(), fake.last_name_female()
-    salary = random.randrange(*salary_range, 100)
+    salary = random.randrange(*salary_range, settings.store_chain.stuff.multiplicity_of_the_salary_sum)
     phone_digits = ''.join(re.findall(r'\d+', fake.phone_number()))
     phone = f'+7 {phone_digits[1 :4]} {phone_digits[4 :7]} {phone_digits[7 :]}'
     values: Rows = (
@@ -157,10 +150,15 @@ def add_new_employee(db: Database, salary_range: tuple) -> int :
             phone=phone
         ),
     )
-    fill_in_one_table(db=db, table_name='stuff', values=values, insert_fields=DBStuff._fields, )
+    res = fill_in_one_table(
+        db=db,
+        table_name='stuff',
+        values=values,
+        insert_fields=DBStuff._fields,
+        returning_field='id',
+        mute=True)
 
-
-    # return res
+    return res.value[0][0]
 
 
 def fill_in_one_table(
@@ -168,7 +166,8 @@ def fill_in_one_table(
         table_name: str,
         values: Rows,
         insert_fields: tuple | None=None,
-        returning_field: str | None=None
+        returning_field: str | None=None,
+        mute: bool=False
 ) -> DBQueryResult :
 
     res = db.insert_rows(
@@ -179,7 +178,8 @@ def fill_in_one_table(
     )
 
     if res.is_successful :
-        log.logger.info(f'The "{table_name}" table have been successfully filled.')
+        if not mute:
+            log.logger.info(f'The "{table_name}" table have been successfully filled.')
     else :
         raise AppDBError(f'Database operation error: couldn\'t filled in the table "{table_name}".')
     return res
