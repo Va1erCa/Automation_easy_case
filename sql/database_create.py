@@ -56,6 +56,8 @@ def recreate_tables() -> bool:
                                 cr_receipt_code varchar(2) NOT NULL,
                                 cashier int4 NOT NULL,                                
                                 CONSTRAINT cash_register_pk PRIMARY KEY (id, store_id),
+                                CONSTRAINT cash_register_store_fk FOREIGN KEY (store_id)
+                                    REFERENCES public.store(id) ON UPDATE CASCADE,
                                 CONSTRAINT cash_register_stuff_fk FOREIGN KEY (cashier) 
                                     REFERENCES public.stuff(id) ON UPDATE CASCADE
                                 ''',
