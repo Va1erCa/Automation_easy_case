@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import datetime
+import pandas as pd
 
 from config_py import settings
 import logger as log
@@ -9,45 +10,120 @@ from logger import set_logger
 
 log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.uploading)
 
+from pgdb import Database, Rows, DBQueryResult
+from exceptions import AppDBError
+from app_types import DBReceipt, DBReceiptLine
+
+
+async def receipts_upload(db: Database, df: pd.DataFrame) -> bool:
+    try:
+        # Getting a list of receipts and their time
+        df_rc = df.groupby('doc_id')['receipt_time'].min().reset_index()
+
+        # Cutting out the store/cashier's identification code from the receipt ID.
+        df_rc['cr_receipt_code'] = df_rc['doc_id'].str[:2]
+
+        # Reading the cash register directory from the postgres database
+        res = db.read_rows(table_name='cash_register', columns_statement='id, store_id, cr_receipt_code')
+        if not res.is_successful :
+            raise AppDBError('Database operation error: couldn\'t read "cash registers" list.')
+
+        # Creating a dict. with decoding <cr_receipt_code>: <key> - cr_receipt_code, <value> - store_id
+        store_dict = {_[2] : _[1] for _ in res.value}
+        df_rc['store_id'] = df_rc['cr_receipt_code'].map(store_dict)
+
+        # Creating a dict. with decoding <cr_receipt_code>: <key> - cr_receipt_code, <value> - cash_register_id
+        cash_reg_dict = {_[2] : _[0] for _ in res.value}
+        df_rc['cash_reg_id'] = df_rc['cr_receipt_code'].map(cash_reg_dict)
+
+        values: Rows = tuple(
+            DBReceipt(
+                id=rec['doc_id'],
+                receipt_time=rec['receipt_time'],
+                store_id=rec['store_id'],
+                cash_reg_id=rec['cash_reg_id']
+            )
+            for rec in df_rc.to_dict(orient='records')
+        )
+
+        query = f"INSERT INTO receipt VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING "
+
+        res = db.run_query(query=query, params=values, several=True)
+
+        if res.is_successful :
+            log.logger.info(f'The sales data have been successfully uploaded to the "receipt" table.')
+        else :
+            raise AppDBError(f'Database operation error: couldn\'t uploaded data to the table "receipt".')
+
+    except Exception as e:
+        log.logger.error(f'Error: {e}')
+        return False
+
+    return True
+
+
+async def receipt_lines_upload(db: Database, df: pd.DataFrame) -> bool:
+    try:
+        df_rcl = df.copy()
+        # Numbering the lines inside the receipts
+        df_rcl['id_line'] = df_rcl.groupby(['doc_id']).cumcount() + 1
+
+        # Reading the goods directory from the postgres database
+        res = db.read_rows(table_name='goods', columns_statement='id, item_name')
+        if not res.is_successful :
+            raise AppDBError('Database operation error: couldn\'t read "goods" list.')
+
+        # Getting the product ID by its name
+        items_dict = {_[1] : _[0] for _ in res.value}
+        df_rcl['id_item'] = df_rcl['item'].map(items_dict)
+
+        values: Rows = tuple(
+            DBReceiptLine(
+                id=rec['id_line'],
+                id_receipt=rec['doc_id'],
+                id_item=rec['id_item'],
+                amount=rec['amount']
+            )
+            for rec in df_rcl.to_dict(orient='records')
+        )
+
+        query = f"INSERT INTO receipt_line VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING "
+
+        res = db.run_query(query=query, params=values, several=True)
+
+        if res.is_successful :
+            log.logger.info(f'The sales data have been successfully uploaded to the "receipt_line" table.')
+        else :
+            raise AppDBError(f'Database operation error: couldn\'t uploaded data to the table "receipt_line".')
+
+    except Exception as e:
+        log.logger.error(f'Error: {e}')
+        return False
+
+    return True
+
 
 async def main() :
-    # await set_logger(log_set=settings.logging_generating)
     log.logger.info('The uploader of the day`s sales was started.')
-
     time_start = datetime.now()
 
+    db: Database = Database(settings.database_connection)
+    if not db.is_connected :
+        return False
 
-    # operating_date = time_start - timedelta(days=1)
+    df_read_only = pd.read_csv('./data/1_2.csv')
 
-    # log.logger.info(f'Operating date: {operating_date.date()}')
+    async with asyncio.TaskGroup() as tg :
+        task1 = tg.create_task(receipts_upload(db=db, df=df_read_only))
+        task2 = tg.create_task(receipt_lines_upload(db=db, df=df_read_only))
 
-    # await recreate_tables()
-
-    # Checking for a day off
-    # if operating_date.weekday() == 6 :
-    #     log.logger.info(f'It\'s a day off, so there\'s no sales data.')
-    #     return
-
-    # Basic operations
-    # await asyncio.sleep(0.01)
-    # chain_stores = ChainStores(chain_settings=settings.store_chain, processing_day=operating_date)
-    # await chain_stores.create_day()
-    # await chain_stores.save_day()
-
-    # pass
-
-    # try :
-    #
-    # except Exception as e :
-    #     logger.error(f'Error: {e}')
-    #     return False
-
-    log.logger.info(f'The uploader of the day`s sales was completed, '
-                f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
-
-    # await asyncio.sleep(0.1)
-    return
+    if task1.result() and task2.result() :
+        log.logger.info(f'The uploader of the day`s sales was completed, '
+                        f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
+    else :
+        log.logger.error(f'Unfortunately, the process of uploading sales data to the database was not successful!')
 
 
 if __name__ == '__main__':
     asyncio.run(main())
+

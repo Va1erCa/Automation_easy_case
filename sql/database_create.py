@@ -98,7 +98,7 @@ def recreate_tables() -> bool:
 
     if not db.create_table(table_name='receipt',
                            columns_statement='''
-                                id varchar NOT NULL,
+                                id varchar(16) NOT NULL,
                                 receipt_time timestamp NOT NULL,
                                 store_id int4 NOT NULL,
                                 cash_reg_id int4 NOT NULL,
@@ -111,7 +111,7 @@ def recreate_tables() -> bool:
     if not db.create_table(table_name='receipt_line',
                            columns_statement='''
                                 id int4 NOT NULL,
-                                id_receipt varchar NOT NULL,
+                                id_receipt varchar(16) NOT NULL,
                                 id_item int4 NOT NULL,
                                 amount int4 NOT NULL,
                                 CONSTRAINT receipt_line_pk PRIMARY KEY (id, id_receipt),
@@ -266,7 +266,7 @@ def fill_in_tables() :
 
 def main() :
 
-    log.logger.info('The process of creating a Postgres database has been started.')
+    log.logger.info('The process of creating a PostgresSQL database has been started.')
 
     time_start = datetime.now()
 

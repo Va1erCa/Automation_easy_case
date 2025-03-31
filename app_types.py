@@ -51,3 +51,17 @@ class DBCashRegister(Row) :
     store_id: int           # store ID
     cr_receipt_code: str    # the code prefix that the cash register putting for it own receipts
     cashier: int            # ID of cashier employee
+
+# Record in <receipt> table - table for the main information our database - the receipts
+class DBReceipt(Row) :
+    id: str                 # receipt ID (primary key)
+    receipt_time: datetime  # time registration of the receipt
+    store_id: int           # store ID
+    cash_reg_id: int        # cash register ID
+
+# Record in <receipt_line> table - table for the main information our database - the receipt lines
+class DBReceiptLine(Row) :
+    id: int                 # ID of the receipt line (primary key)
+    id_receipt: str         # receipt ID (primary key)
+    id_item: int            # product ID
+    amount: int             # store ID

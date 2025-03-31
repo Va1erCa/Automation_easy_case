@@ -11,7 +11,7 @@
             "level": "DEBUG",
             "to_file" : true,
             "logs_folder_path": ".log",
-            "max_num_log_files": 30
+            "max_num_log_files": 10
         },
         "db_creating": {
             "name": "db_create",

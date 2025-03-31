@@ -150,9 +150,9 @@ class Database :
     def insert_rows(
             self,
             table_name: str,
-            insert_fields: tuple[str] | None ,
             values: Rows,
-            returning_field: str|None
+            insert_fields: tuple[str] | None=None,
+            returning_field: str | None=None
     ) -> DBQueryResult:
         ''' Inserting one or multiple rows into a table. '''
         if table_name and len(values) > 0 and len(values[0]) > 0 :
