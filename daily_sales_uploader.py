@@ -3,8 +3,10 @@
 import asyncio
 from datetime import datetime
 import pandas as pd
+import re
+from pathlib import Path, PurePath
 
-from config_py import settings
+from config_py import settings, dir_name
 import logger as log
 from logger import set_logger
 
@@ -103,6 +105,37 @@ async def receipt_lines_upload(db: Database, df: pd.DataFrame) -> bool:
     return True
 
 
+async def read_operation_day() -> pd.DataFrame:
+    # df = pd.read_csv('./data/1_2.csv')
+
+    df = pd.DataFrame()
+    path = PurePath.joinpath(dir_name, settings.sales_storing_path)
+    log.logger.debug(f'Reading data path: {path}')
+    if Path(path).is_dir() :
+        # Compiling "re"-pattern for the name of csv-sales data file
+        regexp = re.compile(r'\d{1,4}_\d{1,4}.csv')
+        # Finding all of csv files
+        list_csv = []
+        for el in Path(path).iterdir() :
+            if regexp.match(el.name, 0) :
+                list_csv.append(el)
+        log.logger.debug(f'{len(list_csv)} data files were detected.')
+        if len(list_csv) == 0 :
+            log.logger.info(f'No download data files were found.')
+
+        for el in list_csv :
+            try :
+                log.logger.debug(f'Reading data file: {el}.')
+                df = pd.concat([df, pd.read_csv(el)])
+            except Exception as e :
+                log.logger.error(f'An error has occurred: {e}')
+
+            # deleting processed file
+            Path.unlink(PurePath.joinpath(path, el))
+
+    return df
+
+
 async def main() :
     log.logger.info('The uploader of the day`s sales was started.')
     time_start = datetime.now()
@@ -111,7 +144,9 @@ async def main() :
     if not db.is_connected :
         return False
 
-    df_read_only = pd.read_csv('./data/1_2.csv')
+    df_read_only = await read_operation_day()
+    if len(df_read_only) == 0 :
+        return False
 
     async with asyncio.TaskGroup() as tg :
         task1 = tg.create_task(receipts_upload(db=db, df=df_read_only))

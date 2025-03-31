@@ -61,7 +61,7 @@ def _init_logging(log_common_set: LogCommonSettings, log_specific_set: LogSpecif
         start_pos = max_num_files - 1
     if list_logs[start_pos :] :
         for f in list_logs[start_pos :] :
-            Path.unlink(PurePath.joinpath(path, f))
+            Path.unlink(f)
 
     return PurePath.joinpath(path, new_log_name)
 
