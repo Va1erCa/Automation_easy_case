@@ -1,7 +1,7 @@
 ## Концепция имитации продуктивной базы данных (The concept of simulating a productive database)
 
 ## Структура (Structure) 
-([структура](household_goods_chain_db_schema.png))
+([структура](../img/household_goods_chain_db_schema.png))
 
 ### 1. Вспомогательные таблицы (Auxiliary tables):
 - `store` - магазины (записи о магазинах торговой сети с указанием названия, часов работы, адреса, директора, телефона)

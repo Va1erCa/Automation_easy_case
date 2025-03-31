@@ -1,7 +1,7 @@
 # Automation easy case
 ## Простейший проект автоматизации (The easiest project of automation)
 
-### [Постановка задачи (Assignment)](main_task.md)
+### [Постановка задачи (Assignment)](./md/main_task.md)
 
 ### Общая идея:
 Для каждого этапа моделирования пайплайна будет написан отдельный скрипт, кроме того, чтобы этап загрузки
@@ -11,9 +11,9 @@
 проецирования на структуру продуктивной базы.  
 
 ### Особенности реализации (Implementation features):
-0. подготовительный этап - инициализация целевой postgres базы данных - [database concept](concept_db.md)
-1. этап генерации продаж(чеков) - концепция изложена в [generation concept](concept_gen.md)
-2. этап загрузки в PostgreSQL базу данных - концепция изложена в [upload concept](concept_up.md)
+0. подготовительный этап - инициализация целевой postgres базы данных - [database concept](./md/concept_db.md)
+1. этап генерации продаж(чеков) - концепция изложена в [generation concept](./md/concept_gen.md)
+2. этап загрузки в PostgreSQL базу данных - концепция изложена в [upload concept](./md/concept_up.md)
 3. настройка автоматизации / база данных: [скриншоты](./img)
 
 ### Модули подготовительного этапа (Preparatory stage modules):
