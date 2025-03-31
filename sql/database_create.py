@@ -1,10 +1,9 @@
-# The module for the first initialization of the database of our store chain
-from dataclasses import fields
+# The module for the first initialization and filling in of the database of our store chain
 
-from pgdb import Database, Row, Rows, DBQueryResult
-from datetime import datetime, timedelta
+from datetime import datetime
 import re, random
 from faker import Faker
+from string import ascii_uppercase, ascii_lowercase
 
 from config_py import settings
 import logger as log
@@ -12,9 +11,10 @@ from logger import set_logger
 
 log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set=settings.logging.db_creating)
 
+from pgdb import Database, Rows, DBQueryResult
 from exceptions import AppDBError
 from chain_stores import goods
-from app_types import DBCategory, DBDiscount, DBGoods, DBStuff
+from app_types import DBCategory, DBDiscount, DBGoods, DBStuff, DBStore, DBCashRegister
 
 
 def recreate_tables() -> bool:
@@ -38,8 +38,8 @@ def recreate_tables() -> bool:
                            columns_statement='''
                                 id int4 NOT NULL,
                                 store_name varchar NOT NULL,
-                                opening_hour varchar NOT NULL,
-                                closing_hour varchar NOT NULL,
+                                opening_hour int4 NOT NULL,
+                                closing_hour int4 NOT NULL,
                                 address varchar NOT NULL,
                                 phone varchar NOT NULL,
                                 manager int4 NOT NULL,
@@ -63,7 +63,7 @@ def recreate_tables() -> bool:
 
     if not db.create_table(table_name='category',
                            columns_statement='''
-                                id int4 NOT NULL,
+                                id int4 GENERATED ALWAYS AS IDENTITY NOT NULL,                                
                                 category_name varchar NULL,
                                 CONSTRAINT category_pk PRIMARY KEY (id)
                                 ''',
@@ -71,7 +71,7 @@ def recreate_tables() -> bool:
 
     if not db.create_table(table_name='discount',
                            columns_statement='''                            
-                                id int4 NOT NULL,
+                                id int4 GENERATED ALWAYS AS IDENTITY NOT NULL,
                                 value numeric(4, 2) NOT NULL,
                                 promo_action varchar NULL,
                                 CONSTRAINT discount_pk PRIMARY KEY (id)
@@ -123,31 +123,25 @@ def recreate_tables() -> bool:
     return True
 
 
-def generate_fake_data(start: int, count: int) -> Rows :
-    ''' Generating fake data for the demo function <main> '''
-    # fake = Faker('ru_RU')
-    fake = Faker('en_US')
-    fake_rows = tuple((str(_), fake.company()[0:30]) for _ in range(start, start+count+1))
-    return fake_rows
+def get_new_phone_number(fake: Faker) -> str:
+    phone_digits = ''.join(re.findall(r'\d+', fake.phone_number()))
+    new_phone = f'+7 {phone_digits[1 :4]} {phone_digits[4 :7]} {phone_digits[7 :]}'
+    return new_phone
 
 
-def add_new_employee(db: Database, salary_range: tuple) -> int :
-    fake = Faker('ru_RU')
-    Faker.seed(random.randint(0,9999))
+def add_new_employee(db: Database, fake: Faker, salary_range: tuple) -> int :
     if random.randint(0, 1) :
         first_name, middle_name, last_name = fake.first_name_male(), fake.middle_name_male(), fake.last_name_male()
     else :
         first_name, middle_name, last_name = fake.first_name_female(), fake.middle_name_female(), fake.last_name_female()
     salary = random.randrange(*salary_range, settings.store_chain.stuff.multiplicity_of_the_salary_sum)
-    phone_digits = ''.join(re.findall(r'\d+', fake.phone_number()))
-    phone = f'+7 {phone_digits[1 :4]} {phone_digits[4 :7]} {phone_digits[7 :]}'
     values: Rows = (
         DBStuff(
             first_name=first_name,
             middle_name=middle_name,
             last_name=last_name,
             salary=salary,
-            phone=phone
+            phone=get_new_phone_number(fake=fake)
         ),
     )
     res = fill_in_one_table(
@@ -185,27 +179,28 @@ def fill_in_one_table(
     return res
 
 
-from chain_stores import Item
-
 def fill_in_tables() :
     db: Database = Database(settings.database_connection)
     if not db.is_connected :
         return False
 
     try:
+        # initializing the Faker module
+        Faker.seed(random.randint(0, 9999))
+        fake = Faker('ru_RU')
+
         # filling in the table "category"
         values: Rows = tuple(
-            DBCategory(id=i, category_name=cat) for i, cat in enumerate(settings.store_chain.goods.categories, start=1)
+            DBCategory(category_name=cat) for cat in settings.store_chain.goods.categories
         )
-        fill_in_one_table(db=db, table_name='category', values=values)
+        fill_in_one_table(db=db, table_name='category', values=values, insert_fields=DBCategory._fields)
 
         # filling in the table "discount"
         values: Rows = tuple(
-            DBDiscount(id=i, value=vl, promo_action=pr) for i, (vl, pr) in
-            enumerate(zip(settings.store_chain.goods.discounts.discounts_values,
-                          [f'promo_{_}' for _ in settings.store_chain.goods.discounts.discounts_values]), start=1)
+            DBDiscount(value=vl, promo_action=f'promo_{vl}')
+            for vl in settings.store_chain.goods.discounts.discounts_values
         )
-        fill_in_one_table(db=db, table_name='discount', values=values)
+        fill_in_one_table(db=db, table_name='discount', values=values, insert_fields=DBDiscount._fields)
 
         # filling in the table "goods"
         # encoding discounts
@@ -226,33 +221,43 @@ def fill_in_tables() :
         )
         fill_in_one_table(db=db, table_name='goods', values=values, insert_fields=DBGoods._fields)
 
-        # class DBStuff(Row) :
-        #     # id: int                 # stuff ID - autoincrement field
-        #     first_name: str  # employee's name
-        #     middle_name: str  # employee's patronymic
-        #     last_name: str  # employee's last name
-        #     salary: int  # employee's salary
-        #     phone: str  # employee's personal phone number
+        # filling in the table "store"
+        values: Rows = tuple(
+            DBStore(
+                id=i,
+                store_name=f'Магазин_{i}',
+                opening_hour=opening_h[0],
+                closing_hour=opening_h[1],
+                address=fake.address(),
+                phone=get_new_phone_number(fake=fake),
+                manager=add_new_employee(db=db, fake=fake, salary_range=settings.store_chain.stuff.range_of_manager_salary)
+            ) for i, opening_h in enumerate(settings.store_chain.stores.opening_hours, start=1)
+        )
+        fill_in_one_table(db=db, table_name='store', values=values)
+
+        # filling in the table "cash_register"
+        values: Rows = tuple(
+            DBCashRegister(
+                id=j,
+                store_id=i,
+                cr_receipt_code=ascii_uppercase[i-1] + ascii_lowercase[j-1],
+                cashier=add_new_employee(db=db, fake=fake, salary_range=settings.store_chain.stuff.range_of_cashier_salary)
+            ) for i, cash_regs in enumerate(settings.store_chain.stores.cash_registers, start=1)
+            for j in range(1, cash_regs+1)
+        )
+        fill_in_one_table(db=db, table_name='cash_register', values=values)
 
 
         # filling in the table "stuff"
-        number_of_staff = len(settings.store_chain.stores.ranks) + sum(settings.store_chain.stores.cash_registers)
-
-        for _ in range(number_of_staff) :
-            add_new_employee(db=db, salary_range=settings.store_chain.stuff.range_of_cashier_salary)
+        # number_of_staff = len(settings.store_chain.stores.ranks) + sum(settings.store_chain.stores.cash_registers)
+        #
+        # for _ in range(number_of_staff) :
+        #     add_new_employee(db=db, fake=fake, salary_range=settings.store_chain.stuff.range_of_cashier_salary)
 
 
     except AppDBError as e:
         log.logger.error(f'Error: {e}')
         return False
-
-   #
-   #
-   # # Generating a fake data (25 lines)
-   #  data = generate_fake_data(1, 25)
-   #
-   #  # Inserting data into a table
-   #  res = db.insert_rows(table_name='new_table', values=data)
 
     return True
 
@@ -267,7 +272,7 @@ def main() :
         log.logger.info(f'The process of creating and filling in the database has been completed successfully, '
                         f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
     else :
-        log.logger.info(f'Unfortunately, the process of creating and filling in the database was not successful!')
+        log.logger.error(f'Unfortunately, the process of creating and filling in the database was not successful!')
 
 
 if __name__ == '__main__' :
