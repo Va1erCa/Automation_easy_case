@@ -292,7 +292,7 @@ class ChainStores :
         df = post_process_df(df)
 
         # Saving all sales data in one file (for debugging)
-        _save_to_csv(df=df, path_save=settings.sales_storing_path, name='temp.csv')
+        # _save_to_csv(df=df, path_save=settings.sales_storing_path, name='temp.csv')
 
         # Saving sales data for stores and cash registers (for production)
         save_by_units(df=df, path_save=settings.sales_storing_path)

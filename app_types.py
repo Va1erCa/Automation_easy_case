@@ -1,4 +1,4 @@
-# Module for data types of the app
+# A data type module for interacting with the database
 
 from datetime import datetime
 

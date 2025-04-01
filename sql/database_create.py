@@ -1,9 +1,12 @@
-# The module for the first initialization and filling in of the database of our store chain
+# The module for the first initialization and filling in of the database of our store chain.
 
 from datetime import datetime
 import re, random
 from faker import Faker
 from string import ascii_uppercase, ascii_lowercase
+
+import sys
+sys.path.append('.')
 
 from config_py import settings
 import logger as log
@@ -18,6 +21,10 @@ from app_types import DBCategory, DBDiscount, DBGoods, DBStuff, DBStore, DBCashR
 
 
 def recreate_tables() -> bool:
+    '''
+    Re-creating database tables
+    :return: a boolean value is an indicator of the operation's success.
+    '''
     db: Database = Database(settings.database_connection)
     if not db.is_connected :
         return False
@@ -126,12 +133,24 @@ def recreate_tables() -> bool:
 
 
 def get_new_phone_number(fake: Faker) -> str:
+    '''
+    Creating a fake phone number in a single format
+    :param fake: the instance of the Faker class
+    :return: a fake phone number as a string
+    '''
     phone_digits = ''.join(re.findall(r'\d+', fake.phone_number()))
     new_phone = f'+7 {phone_digits[1 :4]} {phone_digits[4 :7]} {phone_digits[7 :]}'
     return new_phone
 
 
 def add_new_employee(db: Database, fake: Faker, salary_range: tuple) -> int :
+    '''
+    Creating new employee
+    :param db: the instance of the Database class
+    :param fake: the instance of the Faker class
+    :param salary_range: the range of salaries
+    :return: the ID of the new employee (as an entry in the database)
+    '''
     if random.randint(0, 1) :
         first_name, middle_name, last_name = fake.first_name_male(), fake.middle_name_male(), fake.last_name_male()
     else :
@@ -165,6 +184,17 @@ def fill_in_one_table(
         returning_field: str | None=None,
         mute: bool=False
 ) -> DBQueryResult :
+    '''
+    Simple data entry into the database combined with simple logging
+    :param db: the instance of the Database class
+    :param table_name: the name of the table for recording
+    :param values: the tuple of the NamedTuple instances - our data for recording
+    :param insert_fields: explicit indication of the fields to be inserted.
+                            It is used when the table has an auto-incremented primary key.
+    :param returning_field: fields whose values we want to know after insertion
+    :param mute: the flag for skipping logging.
+    :return: the instance of the DBQueryResult class (pgdb-module)
+    '''
 
     res = db.insert_rows(
         table_name=table_name,
@@ -182,6 +212,9 @@ def fill_in_one_table(
 
 
 def fill_in_tables() :
+    '''
+    The main implementation of the functionality for filling in the database initial fake data
+    '''
     db: Database = Database(settings.database_connection)
     if not db.is_connected :
         return False
@@ -265,6 +298,9 @@ def fill_in_tables() :
 
 
 def main() :
+    '''
+    The main function of this module
+    '''
 
     log.logger.info('The process of creating a PostgresSQL database has been started.')
 

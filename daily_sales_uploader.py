@@ -15,9 +15,16 @@ log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set
 from pgdb import Database, Rows, DBQueryResult
 from exceptions import AppDBError
 from app_types import DBReceipt, DBReceiptLine
+from sql.summary_query import SUMMARY_QUERY
 
 
 async def receipts_upload(db: Database, df: pd.DataFrame) -> bool:
+    '''
+    Uploading receipts to the database
+    :param db: the instance of the Database class
+    :param df: the data frame for processing
+    :return: a boolean value is an indicator of the operation's success.
+    '''
     try:
         # Getting a list of receipts and their time
         df_rc = df.groupby('doc_id')['receipt_time'].min().reset_index()
@@ -65,6 +72,12 @@ async def receipts_upload(db: Database, df: pd.DataFrame) -> bool:
 
 
 async def receipt_lines_upload(db: Database, df: pd.DataFrame) -> bool:
+    '''
+    Uploading receipt lines to the database
+    :param db: the instance of the Database class
+    :param df: the data frame for processing
+    :return: a boolean value is an indicator of the operation's success.
+    '''
     try:
         df_rcl = df.copy()
         # Numbering the lines inside the receipts
@@ -88,7 +101,7 @@ async def receipt_lines_upload(db: Database, df: pd.DataFrame) -> bool:
             )
             for rec in df_rcl.to_dict(orient='records')
         )
-
+        # SQL query with a note about skipping insertion in case of conflict of repetition of the primary key value.
         query = f"INSERT INTO receipt_line VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING "
 
         res = db.run_query(query=query, params=values, several=True)
@@ -106,8 +119,10 @@ async def receipt_lines_upload(db: Database, df: pd.DataFrame) -> bool:
 
 
 async def read_operation_day() -> pd.DataFrame:
-    # df = pd.read_csv('./data/1_2.csv')
-
+    '''
+    The function of file processing of generated sales data for each cash register of each store
+    :return: a data frame with all sales for further processing
+    '''
     df = pd.DataFrame()
     path = PurePath.joinpath(dir_name, settings.sales_storing_path)
     log.logger.debug(f'Reading data path: {path}')
@@ -124,19 +139,39 @@ async def read_operation_day() -> pd.DataFrame:
             log.logger.info(f'No download data files were found.')
 
         for el in list_csv :
+            # Filling the data frame
             try :
                 log.logger.debug(f'Reading data file: {el}.')
                 df = pd.concat([df, pd.read_csv(el)])
             except Exception as e :
                 log.logger.error(f'An error has occurred: {e}')
 
-            # deleting processed file
+            # deleting processed "csv" file
             Path.unlink(PurePath.joinpath(path, el))
 
     return df
 
 
+async def summary_info(db:Database) :
+    '''
+    Accessing the database for summary information and outputting the report by the logger.
+    :param db: the instance of the Database class
+    '''
+    res = db.run_query(query=SUMMARY_QUERY)
+    if res.is_successful :
+        rep_dict = {_[1] : _[2] for _ in res.value}
+        log.logger.info(f'==============================================================================')
+        log.logger.info(f'  Summary')
+        log.logger.info(f'==============================================================================')
+        for k, v in rep_dict.items() :
+            log.logger.info(f'{k.rjust(25)} : {v}')
+        log.logger.info(f'==============================================================================')
+
+
 async def main() :
+    '''
+    The main function of this module
+    '''
     log.logger.info('The uploader of the day`s sales was started.')
     time_start = datetime.now()
 
@@ -148,6 +183,7 @@ async def main() :
     if len(df_read_only) == 0 :
         return False
 
+    # Creating two tasks for asynchronous launch of two coroutines
     async with asyncio.TaskGroup() as tg :
         task1 = tg.create_task(receipts_upload(db=db, df=df_read_only))
         task2 = tg.create_task(receipt_lines_upload(db=db, df=df_read_only))
@@ -155,6 +191,8 @@ async def main() :
     if task1.result() and task2.result() :
         log.logger.info(f'The uploader of the day`s sales was completed, '
                         f'execution time - {(datetime.now() - time_start).total_seconds():.2f} seconds.')
+        # Outputting summary info
+        await summary_info(db=db)
     else :
         log.logger.error(f'Unfortunately, the process of uploading sales data to the database was not successful!')
 
@@ -162,3 +200,4 @@ async def main() :
 if __name__ == '__main__':
     asyncio.run(main())
 
+    # asyncio.run(summary_info())

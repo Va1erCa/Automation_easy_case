@@ -1,4 +1,4 @@
-# A class for working with a database
+# A class for working with a database.
 #
 #   Class name: Database
 #   Methods:
@@ -6,14 +6,12 @@
 #       read_rows(table_name, columns_statement, condition_statement, order_by_statement, limit)
 #       search_table(table_name)
 #       create_table(table_name, columns_statement, overwrite)
-#       insert_rows(table_name, values)
+#       insert_rows(table_name, values, insert_fields, returning_field)
 #       update_data(table_name, set_statement, condition_statement)
 #       delete_rows(table_name, condition_statement)
 #       count_rows(table_name)
 #       close_connection()
-#
-# >>>  Usage examples in the <pgdb_example.py> module
-#
+
 
 import psycopg2
 from psycopg2 import extensions

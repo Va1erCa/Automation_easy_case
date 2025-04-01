@@ -1,4 +1,4 @@
-# A module for the regular formation of the history of our network of stores
+# A module for the regular formation of the history of our network of stores.
 
 import asyncio
 from datetime import datetime, timedelta
@@ -13,6 +13,9 @@ log.logger = set_logger(log_common_set=settings.logging.common, log_specific_set
 
 
 async def main() :
+    '''
+    The main function of this module
+    '''
     # await set_logger(log_set=settings.logging_generating)
     log.logger.info('The generator of the day`s sales was started.')
 
